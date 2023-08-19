@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}
+  User: 
+  
+    {{ object.username }}
+  
+  
+{% endblock title %}
+{% block content %}
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-12">
+        <h2>
+        
+        
+          {{ object.username }}
+        
+      </h2>
+      {% if object.name %}
+        <p>{{ object.name }}</p>
+      {% endif %}
+    </div>
+  </div>
+  {% if object == request.user %}
+    <!-- Action buttons -->
+    <div class="row">
+      <div class="col-sm-12">
+        <a class="btn btn-primary" href="{% url 'users:update' %}" role="button">My Info</a>
+        <a class="btn btn-primary"
+           href="{% url 'account_email' %}"
+           role="button">E-Mail</a>
+        <!-- Your Stuff: Custom user template urls -->
+      </div>
+
+    </div>
+    <!-- End Action buttons -->
+  {% endif %}
+  <br>
+  <div >
+  <p> Please write msg below and press send btn (your first msg will be your token) <em>Note that after difining your token you should sent it to bot <a href="https://t.me/testResponderLeet42Bot">t.me/testResponderLeet42Bot</a> from your telegram client</em></p>
+  </div>
+  {% csrf_token %}
+
+  <div class="row" id="div1">
+    <div class="col-sm-12">
+        <div class="form-group">
+          <label for="exampleFormControlTextarea1">Msg textarea</label>
+          <textarea class="form-control" id="Textarea1" rows="3"></textarea>
+        </div>
+    </div>
+    <div class="col-sm-12">
+        <a class="btn btn-warning" href="#" role="button" id="button1">Send</a>
+    </div>
+        <div class="col-sm-12">
+        <a class="btn btn-secondary" href="#" role="button" id="button2">get all msg</a>
+    </div>
+  </div>
+  <br>
+  <div id="dummy-div"></div>
+</div>
+
+  <script>
+
+      const sendForm = document.getElementById("button1");
+
+          sendForm.addEventListener('click', e=> {
+
+              event.preventDefault();
+
+              let tokenObject = document.getElementById("token_obj");
+              var textArea = document.getElementById("Textarea1")
+
+              if (!tokenObject) {
+                //  block of code to be executed if no tokenObject exist
+
+                let msgtext = textArea.value;
+                
+                // create a new div element
+                const newDiv = document.createElement("div");
+
+                // and give it some content
+                someText = " likely your token is - " + msgtext + " - send it to telegram to start"
+                const newContent = document.createTextNode(someText);
+                console.log("from local" + msgtext)
+
+                // add the text node to the newly created div
+                newDiv.appendChild(newContent);
+                newDiv.setAttribute("id","token_obj");
+
+                // add the newly created element and its content into the DOM
+                const currentDiv = document.getElementById("div1");
+                currentDiv.parentNode.insertBefore(newDiv, currentDiv);
+
+              }
+
+              let csrf =  document.getElementsByName("csrfmiddlewaretoken")[0].value;
+              // let idUsername = document.getElementById("id_username").value;
+              let msgtext = textArea.value;
+
+              // clear text field
+              textArea.value = '';
+
+              let data = JSON.stringify({
+                              "msgtext": msgtext,
+                              });
+
+              fetch("/responder/add_msg_api/",{
+                  credentials:'same-origin',
+                  headers:{
+                           'Content-Type':'application/json',
+                           'X-CSRFToken': csrf
+                  },
+                  method:"POST",
+                  body:data
+              })
+                          .then(resp => {
+                              if(resp.ok){
+                                console.log("good Status: " + resp.status);
+                                return resp.json()
+                                // window.location.reload(true);
+                                // if no resp (its ok here for dj-rest-auth) go to main page
+                                // window.location.href = "/";
+                              }else{
+                                console.log("Status: "+resp.status);
+                              }
+                            })
+                            
+                          .catch(err => {
+                              console.log(err);;
+                          })
+
+
+          });  
+
+
+
+// Get all msg
+
+      const getForm = document.getElementById("button2");
+
+          getForm.addEventListener('click', e=> {
+
+              event.preventDefault();
+
+              let csrf =  document.getElementsByName("csrfmiddlewaretoken")[0].value;
+
+              let data = JSON.stringify({
+                              // "chat_id": chatId,
+                              });
+
+              fetch("/responder/get_msg_api/",{
+                  credentials:'same-origin',
+                  headers:{
+                           'Content-Type':'application/json',
+                           'X-CSRFToken': csrf
+                  },
+                  method:"GET",
+                  // body:data
+              })
+                        .then(resp => {
+                              if(resp.ok){
+                                console.log("good Status: " + resp.status);
+                                return resp.json().then((data) => {
+
+                                    // data is already json object in this case eg {"value": -1, "count": 0}
+                                    console.log(data)
+
+                                    const element = document.getElementById("all-msg-text");
+                                    if (element) {
+                                    element.remove();
+                                    }
+
+                                    // create a new div element
+                                    const newDiv1 = document.createElement("div");
+
+                                    // and give it some content
+                                    someText2 = JSON.stringify(data)
+                                    const newContent2 = document.createTextNode(someText2);
+
+                                    // add the text node to the newly created div
+                                    newDiv1.appendChild(newContent2);
+                                    newDiv1.setAttribute("id","all-msg-text");
+
+                                    // add the newly created element and its content into the DOM
+                                    const divNearWhichPaste = document.getElementById("dummy-div");
+                                    divNearWhichPaste.parentNode.insertBefore(newDiv1, divNearWhichPaste);
+
+                                    // window.location.replace(`/topics/${data}/`)
+                                    // const obj = JSON.parse(data)
+                                    // const likeNum = document.getElementById('likes_number');
+                                    // const likeHeart = document.getElementById('topic-like-btn');
+                                    // const likeValue = data.value;
+                                    // likeNum.innerHTML = data.count;
+
+                                    // // console.log(data.value)
+
+                                    // if (likeValue == -1) {
+                                    //   likeHeart.innerHTML = 'favorite_outline';
+                                    //   likeHeart.classList.remove('red-text');
+                                    // }
+                                    // else if (likeValue == 1) {
+                                    //   likeHeart.innerHTML = 'favorite';
+                                    //   likeHeart.classList.add('red-text');
+                                    // }
+
+                                    })
+                              }else{
+                                console.log("Status: "+resp.status);
+                              }
+                            })
+                            
+                          .catch(err => {
+                              console.log(err);;
+                          })
+
+
+
+
+          });  
+
+</script>
+
+
+{% endblock content %}

@@ -1,0 +1,79 @@
+{% extends "account/base.html" %}
+
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{% block head_title %}
+  {% translate "Signup" %}
+{% endblock head_title %}
+{% block inner %}
+
+  <h1>{% translate "Sign Up" %}</h1>
+  <p>
+    {% blocktranslate %}Already have an account? Then please <a href="{{ login_url }}">sign in</a>.{% endblocktranslate %}
+  </p>
+  <form class="signup"
+        id="signup_form"
+        method="post"
+        action="{% url 'account_signup' %}">
+    {% csrf_token %}
+    {{ form|crispy }}
+    {% if redirect_field_value %}
+      <input type="hidden"
+             name="{{ redirect_field_name }}"
+             value="{{ redirect_field_value }}" />
+    {% endif %}
+    <button class="btn btn-primary" type="submit">{% translate "Sign Up" %} »</button>
+  </form>
+
+  <script>
+
+        const signupForm = document.getElementById("signup_form");
+
+            signupForm.addEventListener("submit", e=>{
+
+              event.preventDefault();
+
+                let csrf =  document.getElementsByName("csrfmiddlewaretoken")[0].value;
+                let idUsername = document.getElementById("id_username").value;
+                let name = document.getElementById("id_name").value;
+                let password = document.getElementById("id_password1").value;
+                let password2 = document.getElementById("id_password2").value;
+
+
+                const data = JSON.stringify({
+                                // "csrfmiddlewaretoken": csrf, 
+                                "username": idUsername, 
+                                "password1": password, 
+                                "password2": password2,
+                                "name": name,
+                                });
+
+                fetch("/dj-rest-auth/registration/",{
+                    credentials:'same-origin',
+                    mode:'same-origin',
+                    headers:{'Content-Type':'application/json'},
+                    method:"post",
+                    body:data
+                })
+                            .then(resp => {
+                                // window.location.reload(true);
+                                if(resp.ok){
+                                  // return resp.json()
+                                  // window.location.reload(true);
+                                  // if no resp (its ok here for dj-rest-auth) go to main page
+                                  window.location.href = "/";
+                                }else{
+                                  console.log("Status: "+resp.status);
+                                }
+                              })
+                              
+                            .catch(err =>{
+                                console.log(err);;
+                            })
+
+            });  
+
+</script>
+
+{% endblock inner %}
